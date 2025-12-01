@@ -1,108 +1,141 @@
+const { clienteModel } = require('../models/ClienteModel');
 
-const { clienteModel } = require('../models/ClienteModel')
 const clienteController = {
+
+    /**
+     * Retorna todos os clientes cadastrados
+     * Rota: GET /clientes
+     * @async
+     * @function selecionarTodosClientes
+     * @param {Request} req Objeto da requisição HTTP
+     * @param {Response} res Objeto da resposta HTTP
+     * @returns {Promise<Object>} Retorna array com todos os clientes ou mensagem de erro
+     */
     selecionarTodosClientes: async (req, res) => {
         try {
             const resultado = await clienteModel.selecionarTodos();
+
             if (!resultado || resultado.length === 0) {
-                return res.status(400).json({ message: 'A tabela Clientes não contém registros' })
+                return res.status(404).json({ message: 'Nenhum cliente encontrado.' });
             }
 
-            return res.status(200).json({ message: 'Resultado dos dados listados:', data: resultado })
+            return res.status(200).json(resultado);
 
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: 'Ocorreu um erro no servidor', errorMessage: error.message })
+            return res.status(500).json({ message: 'Erro no servidor' });
         }
     },
-    adicionarCliente: async (req, res) => {
 
+    /**
+     * Retorna um cliente pelo ID
+     * Rota: GET /clientes/:idCliente
+     * @async
+     * @function selecionarPorIdCliente
+     * @param {Request} req Objeto da requisição HTTP
+     * @param {Response} res Objeto da resposta HTTP
+     * @returns {Promise<Object>} Retorna o cliente encontrado ou mensagem de erro
+     */
+    selecionarPorIdCliente: async (req, res) => {
         try {
-            const { nome, cpf } = req.body;
+            const id = req.params.idCliente;
+            const resultado = await clienteModel.selecionarPorId(id);
 
-            console.log(cpf.length)
-            if (!nome || nome.length < 3 || !String(nome) || !Number(cpf) || cpf.length != 11) {
-                return res.status(400).json({ message: 'Dados invalidos' })
+            if (!resultado || resultado.length === 0) {
+                return res.status(404).json({ message: 'Cliente não encontrado.' });
             }
-            const consultarCPF = await clienteModel.analisarCPF(cpf)
-            if (consultarCPF.length > 0) {
-                return res.status(409).json({ message: "Cpf já esta cadastrado!" })
 
-            }
-            const resultado = await clienteModel.adicionarCliente(nome, cpf)
-            if (resultado.affectedRows === 1 && resultado.insertId !== 0) {
-                res.status(201).json({ message: 'Registro incluido com sucesso', result: resultado })
-            } else {
-                throw new Error('ocorreu um erro ao incluir o registro')
-            }
-            console.log(cpf)
+            return res.status(200).json(resultado[0]);
+
         } catch (error) {
-            console.error(error)
-            res.status(500).json({ Message: 'Ocorreu um erro no servidor.', errorMessage: error.message })
+            return res.status(500).json({ message: 'Erro no servidor' });
         }
     },
 
+    /**
+     * Adiciona um novo cliente
+     * Rota: POST /clientes
+     * @async
+     * @function adicionarCliente
+     * @param {Request} req Objeto da requisição HTTP
+     * @param {Response} res Objeto da resposta HTTP
+     * @returns {Promise<Object>} Retorna mensagem de sucesso e ID do cliente criado
+     */
+    adicionarCliente: async (req, res) => {
+        try {
+            const { idCliente, nomeCliente, cpfCliente, telefoneCliente, emailCliente } = req.body;
+
+            const resultado = await clienteModel.adicionar(idCliente, nomeCliente, cpfCliente, telefoneCliente, emailCliente);
+
+            return res.status(201).json({ message: 'Cliente cadastrado com sucesso!', id: resultado.insertId });
+
+        } catch (error) {
+            return res.status(500).json({ message: 'Erro ao cadastrar cliente' });
+        }
+    },
+
+    /**
+     * Exclui um cliente pelo ID
+     * Rota: DELETE /clientes/:id
+     * @async
+     * @function excluirCliente
+     * @param {Request} req Objeto da requisição HTTP
+     * @param {Response} res Objeto da resposta HTTP
+     * @returns {Promise<Object>} Retorna mensagem de sucesso ou erro
+     */
     excluirCliente: async (req, res) => {
         try {
-            const id = Number(req.params.idCliente)
-            if (!id || !Number.isInteger(id)) {
-                return res.status(400).json({ message: "Forneça um ID valido!" })
-            }
+            const id = Number(req.params.id);
+
+            if (!id) return res.status(400).json({ message: "Forneça um ID válido!" });
+
             const consulta = await clienteModel.selecionarPorId(id);
-            if (consulta.length === 0) {
-                throw new Error("Registro não localizado");
+            if (consulta.length === 0) return res.status(404).json({ message: "Cliente não encontrado!" });
 
-            }
-            else {
-                const resultado = await clienteModel.deleteCliente(id);
-                console.log(resultado);
-                if (resultado.affectedRows === 1) {
-                    res.status(201).json({ message: "Cliente excluido com sucesso ", data: resultado })
-                }
-                else {
-                    throw new Error("Não foi possivel excluir o Cliente");
+            const resultado = await clienteModel.deleteCliente(id);
 
-                }
+            if (resultado.affectedRows === 1) {
+                res.status(200).json({ message: "Cliente excluído com sucesso" });
+            } else {
+                throw new Error("Não foi possível excluir o cliente");
             }
+
         } catch (error) {
-            console.error(error)
-            res.status(500).json({ Message: 'Ocorreu um erro no servidor.', errorMessage: error.message })
+            res.status(500).json({ message: 'Ocorreu um erro no servidor.' });
         }
     },
+
+    /**
+     * Atualiza os dados de um cliente
+     * Rota: PUT /clientes/:id
+     * @async
+     * @function atualizarCliente
+     * @param {Request} req Objeto da requisição HTTP
+     * @param {Response} res Objeto da resposta HTTP
+     * @returns {Promise<Object>} Retorna mensagem de sucesso ou erro
+     */
     atualizarCliente: async (req, res) => {
         try {
-            const idCliente = Number(req.params.idCliente)
-            let { nome, cpf } = req.body
-            nome = nome.trim();
-            if (!idCliente || !nome || !cpf || typeof idCliente !== 'number' || !isNaN(nome) || isNaN(cpf) || cpf.length < 11 || nome.trim().length < 3) {
-                return res.status(400).json({ message: "Verifique os dados enviados e tente novamente!" });
-            }
-            const ClienteAtual = await clienteModel.selecionarPorId(idCliente)
-            if (!ClienteAtual || ClienteAtual.length === 0) {
-                throw new Error("Registro não localizado");
+            const id = Number(req.params.id);
+            const { nomeCliente, cpfCliente, telefoneCliente, emailCliente, enderecoCompleto } = req.body;
+
+            if (!id || !nomeCliente || !cpfCliente || !telefoneCliente || !emailCliente || !enderecoCompleto) {
+                return res.status(400).json({ message: "Dados inválidos" });
             }
 
-            const novoNome = nome.trim() ?? ClienteAtual[0].nomeCLiente;
-            const novoCpf = cpf ?? ClienteAtual[0].cpfCliente;
-            const resultado = await clienteModel.alterarCliente(idCliente, novoNome, novoCpf);
-            if (resultado.changedRows === 0) {
-                throw new Error("Ocorreu um erro ao atualizar");
+            const clienteAtual = await clienteModel.selecionarPorId(id);
+            if (clienteAtual.length === 0) return res.status(404).json({ message: "Cliente não encontrado" });
 
-            }
-            console.log(cpf, nome)
-            return res.status(200).json({ message: "Registro atualizado com sucesso", data: resultado })
+            const resultado = await clienteModel.alterarCliente(id, nomeCliente, cpfCliente, telefoneCliente, emailCliente, enderecoCompleto);
+
+            if (resultado.changedRows === 0) return res.status(400).json({ message: "Nenhuma alteração realizada" });
+
+            res.status(200).json({ message: "Cliente atualizado com sucesso" });
+
         } catch (error) {
-            console.error(error)
-            res.status(500).json({ Message: 'Ocorreu um erro no servidor.', errorMessage: error.message })
+            res.status(500).json({ message: 'Erro ao atualizar cliente' });
         }
-
-
     }
 
-}
+};
 
-
-
-
-
-module.exports = { clienteController }
+module.exports = { clienteController };
