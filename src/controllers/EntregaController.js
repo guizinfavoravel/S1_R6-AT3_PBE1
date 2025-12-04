@@ -58,7 +58,7 @@ const entregaController = {
 
             const result = await criarEntregaModel(dadosEntrega);
 
-            res.status(201).json({ message: 'Entrega criada com sucesso', entrega_id: result.id });
+            res.status(201).json({ message: 'Entrega criada com sucesso', entrega_id: result});
         } catch (error) {
             res.status(500).json({ message: 'Erro ao criar entrega'});
         }

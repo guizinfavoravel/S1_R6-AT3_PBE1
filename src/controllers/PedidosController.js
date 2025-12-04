@@ -56,15 +56,9 @@ const pedidosController = {
     inserirPedidos: async (req, res) => {
         try {
             const { idCliente, dataPedido, distancia, pesoCarga, valorBaseKm, valorBaseKg } = req.body;
+            const resultado = await pedidosModel.inserirPedidos( idCliente, dataPedido, distancia, pesoCarga, valorBaseKm, valorBaseKg);
 
-            const resultado = await pedidosModel.inserirPedidos(
-                idCliente, dataPedido, distancia, pesoCarga, valorBaseKm, valorBaseKg
-            );
-
-            return res.status(201).json({ 
-                message: "Pedido inserido com sucesso", 
-                idGerado: resultado.insertId 
-            });
+            return res.status(201).json({ message: "Pedido inserido com sucesso", idGerado: resultado});
 
         } catch (error) {
             return res.status(500).json({ message: "Erro ao inserir pedido" });
