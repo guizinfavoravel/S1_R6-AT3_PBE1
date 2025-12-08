@@ -16,6 +16,7 @@ const pedidosController = {
             const resultado = await pedidosModel.selecionarTodos();
             return res.status(200).json(resultado);
         } catch (error) {
+            console.error;
             return res.status(500).json({ message: "Erro ao buscar pedidos" });
         }
     },
@@ -40,6 +41,7 @@ const pedidosController = {
 
             return res.status(200).json(resultado[0]);
         } catch (error) {
+            console.error;
             return res.status(500).json({ message: "Erro ao buscar pedido" });
         }
     },
@@ -58,10 +60,11 @@ const pedidosController = {
             const { idCliente, dataPedido, distancia, pesoCarga, valorBaseKm, valorBaseKg } = req.body;
             const resultado = await pedidosModel.inserirPedidos( idCliente, dataPedido, distancia, pesoCarga, valorBaseKm, valorBaseKg);
 
-            return res.status(201).json({ message: "Pedido inserido com sucesso", idGerado: resultado});
+            return res.status(201).json({ message: "Pedido inserido com sucesso", resultado});
 
         } catch (error) {
-            return res.status(500).json({ message: "Erro ao inserir pedido" });
+            console.error(error);
+            return res.status(500).json({ message: "Erro ao inserir pedido", error });
         }
     },
 
@@ -90,6 +93,7 @@ const pedidosController = {
             return res.status(200).json({ message: "Pedido atualizado com sucesso" });
 
         } catch (error) {
+            console.error(error);
             return res.status(500).json({ message: "Erro ao atualizar pedido" });
         }
     },
@@ -113,10 +117,16 @@ const pedidosController = {
                 return res.status(404).json({ message: "Pedido não encontrado para excluir" });
             }
 
+
+
             return res.status(200).json({ message: "Pedido excluído com sucesso" });
 
-        } catch (error) {
-            return res.status(500).json({ message: "Erro ao excluir pedido" });
+        } catch (error) {   
+            if(error.errno === 1451) {
+                return res.status(400).json({message: "Existe uma entrega relacionada ao pedido"})
+            }
+            console.error;
+            return res.status(500).json({ message: "Erro ao excluir pedido", error });
         }
     }
 

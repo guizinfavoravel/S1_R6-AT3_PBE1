@@ -22,8 +22,12 @@ const criarEntrega = async (entrega) => {
     `;
     const params = [ entrega.idPedidos, entrega.valorDistancia, entrega.valorPeso, entrega.acrescimo, entrega.desconto, entrega.taxa, entrega.valorFinal, entrega.tipoEntrega
     ];
-    const [result] = await db.execute(sql, params);
-    return { id: result.insertId };
+
+
+    const [result] = await pool.query(sql, params);
+    return { id: result };
+
+
 };
 
 /**
@@ -43,7 +47,7 @@ const buscarTodasEntregas = async () => {
  * @returns {Promise<Object|null>} Retorna a entrega encontrada ou null se não existir
  */
 const buscarEntregaPorId = async (id) => {
-    const [rows] = await db.execute('SELECT * FROM entregas WHERE idEntregas = ?', [id]);
+    const [rows] = await pool.query('SELECT * FROM entregas WHERE idEntregas = ?', [id]);
     return rows[0] || null;
 };
 
@@ -54,17 +58,6 @@ const buscarEntregaPorId = async (id) => {
  * @param {Object} entrega Objeto com os novos valores da entrega
  * @returns {Promise<void>}
  */
-const atualizarEntrega = async (id, entrega) => {
-    const sql = `
-        UPDATE entregas 
-        SET idPedidos = ?, valorDistancia = ?, valorPeso = ?, acrescimo = ?, desconto = ?, taxa = ?, valorFinal = ?, tipoEntrega = ?
-        WHERE idEntregas = ?
-    `;
-    const params = [ entrega.idPedidos, entrega.valorDistancia, entrega.valorPeso, entrega.acrescimo, entrega.desconto, entrega.taxa, entrega.valorFinal, entrega.tipoEntrega, id
-    ];
-    await db.execute(sql, params);
-};
-
 /**
  * Deleta uma entrega pelo ID
  * @async
@@ -72,7 +65,7 @@ const atualizarEntrega = async (id, entrega) => {
  * @returns {Promise<void>}
  */
 const deletarEntrega = async (id) => {
-    await db.execute('DELETE FROM entregas WHERE idEntregas = ?', [id]);
+    await pool.query('DELETE FROM entregas WHERE idEntregas = ?', [id]);
 };
 
-module.exports = { criarEntrega, buscarTodasEntregas, buscarEntregaPorId, atualizarEntrega, deletarEntrega };
+module.exports = { criarEntrega, buscarTodasEntregas, buscarEntregaPorId, deletarEntrega };

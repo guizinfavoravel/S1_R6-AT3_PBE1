@@ -60,13 +60,31 @@ const pedidosModel = {
      * @param {number} valorBaseKg - Valor base por kg
      * @returns {Promise<Object>} Retorna resultado da atualização
      */
-    alterarPedidos: async (pId, idCliente, dataPedido, distancia, pesoCarga, valorBaseKm, valorBaseKg) => {
-        const sql = `
-            UPDATE pedidos SET idCliente = ?, dataPedido = ?, distancia = ?, pesoCarga = ?, valorBaseKm = ?, valorBaseKg = ? WHERE idPedidos = ?;
-        `;
-        const values = [idCliente, dataPedido, distancia, pesoCarga, valorBaseKm, valorBaseKg, pId];
-        const [rows] = await pool.query(sql, values);
-        return rows;
+    alterarPedidos: async (pId, idCliente, dataPedido, distancia, pesoCarga, valorBaseKm, valorBaseKg) => {  
+        const connection = await pool.getConnection()      
+        try {
+            await connection.beginTransaction();
+            const sqlPedidos =  'UPDATE pedidos SET idCliente = ?, dataPedido = ?, distancia = ?, pesoCarga = ?, valorBaseKm = ?, valorBaseKg = ? WHERE idPedidos = ?';
+             const valuesPedido = [idCliente, dataPedido, distancia, pesoCarga, valorBaseKm, valorBaseKg, pId];
+        const [rowsPedido] = await connection.query(sqlPedidos, valuesPedido);
+
+        const sqlEntrega =  ` UPDATE entregas 
+        SET idPedidos = ?, valorDistancia = ?, valorPeso = ?, acrescimo = ?, desconto = ?, taxa = ?, valorFinal = ?, tipoEntrega = ?
+        WHERE idEntregas = ?
+    `;
+    const valuesEntrega = [ entrega.idPedidos, entrega.valorDistancia, entrega.valorPeso, entrega.acrescimo, entrega.desconto, entrega.taxa, entrega.valorFinal, entrega.tipoEntrega, id];
+    const [rowsEntrega] = await connection.query(sqlEntrega,valuesEntrega)
+
+    await connection.commit()
+
+    return(rowsPedido,rowsEntrega)
+
+        } catch (error) {
+            await connection.rollback();
+            throw error
+        }finally{
+            connection.release()
+        }
     },
 
     /**

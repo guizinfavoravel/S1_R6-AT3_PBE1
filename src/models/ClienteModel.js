@@ -46,17 +46,26 @@ const clienteModel = {
         return rows;
     },
 
+       verificarCpf: async (cpf) => {
+        const sql = "SELECT * FROM cliente WHERE cpfCliente = ?";
+        const values = [cpf];
+        const [rows] = await pool.query(sql, values);
+        return rows.length > 0;
+    },
+
+        analisarEmail: async (email) => {
+        const sql = 'SELECT * FROM cliente WHERE emailCliente = ?;';
+        const [rows] = await pool.query(sql, [email]);
+        return rows.length>0;
+    },
+
     /**
      * Analisa se já existe um cliente com determinado CPF
      * @async
      * @param {string} cpf - CPF a ser verificado
      * @returns {Promise<Object[]>} Retorna array com clientes encontrados (se houver)
      */
-    analisarCPF: async (cpf) => {
-        const sql = 'SELECT * FROM cliente WHERE cpfCliente = ?;';
-        const [rows] = await pool.query(sql, [cpf]);
-        return rows;
-    },
+
 
     /**
      * Exclui um cliente pelo ID

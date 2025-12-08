@@ -10,7 +10,9 @@ const { criarEntrega: criarEntregaModel, buscarTodasEntregas, buscarEntregaPorId
  * @param {string} dados.tipoEntrega Tipo de entrega (normal ou urgente)
  * @returns {Object} Valores calculados da entrega
  */
-const calcularValoresEntrega = ({ distancia_km, peso_kg, valor_base_km, valor_base_kg, tipoEntrega }) => {
+const calcularValoresEntrega = (distancia_km, peso_kg, valor_base_km, valor_base_kg, tipoEntrega ) => {
+
+
     const valorDistancia = distancia_km * valor_base_km;
     const valorPeso = peso_kg * valor_base_kg;
 
@@ -47,19 +49,20 @@ const entregaController = {
      */
     criarEntrega: async (req, res) => {
         try {
-            const dados = req.body;
-            if (!dados.idPedidos || !dados.distancia_km || !dados.peso_kg || !dados.valor_base_km || !dados.valor_base_kg) {
+            const {idPedidos, distancia_km, peso_kg, valor_base_km, valor_base_kg, tipoEntrega} = req.body;
+            if (!idPedidos || !distancia_km || !peso_kg || !valor_base_km || !valor_base_kg) {
                 return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser enviados' });
             }
 
-            const calculo = calcularValoresEntrega(dados);
-
-            const dadosEntrega = { idPedidos: dados.idPedidos, valorDistancia: calculo.valorDistancia, valorPeso: calculo.valorPeso, acrescimo: calculo.acrescimo, desconto: calculo.desconto, taxa: calculo.taxa, valorFinal: calculo.valorFinal, tipoEntrega: dados.tipoEntrega};
+            const calculo = calcularValoresEntrega(distancia_km, peso_kg, valor_base_km, valor_base_kg, tipoEntrega);
+            console.log(calculo)
+            const dadosEntrega = { idPedidos: idPedidos, valorDistancia: calculo.valorDistancia, valorPeso: calculo.valorPeso, acrescimo: calculo.acrescimo, desconto: calculo.desconto, taxa: calculo.taxa, valorFinal: calculo.valorFinal, tipoEntrega: tipoEntrega};
 
             const result = await criarEntregaModel(dadosEntrega);
 
-            res.status(201).json({ message: 'Entrega criada com sucesso', entrega_id: result});
+            res.status(201).json({ message: 'Entrega criada com sucesso', result});
         } catch (error) {
+            console.error("Erro ao criar entrega:", error);
             res.status(500).json({ message: 'Erro ao criar entrega'});
         }
     },
@@ -78,6 +81,7 @@ const entregaController = {
             const entregas = await buscarTodasEntregas();
             res.json(entregas);
         } catch (err) {
+            console.error("Erro ao listar a entrega", error);
             res.status(500).json({ message: 'Erro ao listar entregas'});
         }
     },
@@ -98,6 +102,7 @@ const entregaController = {
             if (!entrega) return res.status(404).json({ message: 'Entrega não encontrada' });
             res.json(entrega);
         } catch (Erro) {
+            console.error("Erro ao buscar a entrega", error);
             res.status(500).json({ message: 'Erro ao buscar entrega'});
         }
     },
@@ -128,6 +133,7 @@ const entregaController = {
 
             res.json({ message: 'Entrega atualizada com sucesso' });
         } catch (error) {
+            console.error("Erro ao atualizar a entrega:", error);
             res.status(500).json({ message: 'Erro ao atualizar entrega'});
         }
     },
@@ -147,6 +153,7 @@ const entregaController = {
             await deletarEntregaModel(id);
             res.json({ message: 'Entrega deletada com sucesso' });
         } catch (Erro) {
+            console.error("Erro ao deletar a entrega:", error);
             res.status(500).json({ message: 'Erro ao deletar entrega'});
         }
     }
